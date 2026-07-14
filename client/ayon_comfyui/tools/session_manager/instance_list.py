@@ -110,6 +110,7 @@ class SessionTreeNode(Treeitem):
     def __init__(self, session: Session, parent: InstanceTreeNode) -> None:
         super().__init__(parent)
         self.session = session
+        self.instance = parent.instance
 
         self.font = QtGui.QFont()
         self.font.setStyleHint(QtGui.QFont.StyleHint.Monospace)
@@ -197,3 +198,22 @@ class InstanceList(QtWidgets.QTreeView):
 
     def set_instances(self, instances: list[Instance]) -> None:
         self._model.set_instances(instances)
+
+    def get_selected_nodes(self) -> list[InstanceTreeNode | SessionTreeNode]:
+        selection_model = self.selectionModel()
+        indexes = selection_model.selectedIndexes()
+        if not indexes:
+            return []
+        return [index.internalPointer() for index in indexes]
+
+    def get_selected_instance(self) -> Instance | None:
+        nodes = self.get_selected_nodes()
+        for node in nodes:
+            # both InstanceTreeNode and SessionTreeNode have an instance attrib
+            return node.instance
+
+    def get_selected_session(self) -> Session | None:
+        nodes = self.get_selected_nodes()
+        for node in nodes:
+            if isinstance(node, SessionTreeNode):
+                return node.session

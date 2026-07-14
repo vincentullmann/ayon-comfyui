@@ -1,4 +1,8 @@
+// @ts-check
+
 import { app } from "../../scripts/app.js";
+import { api } from "../../scripts/api.js";
+
 import "../../../../extensions/ayon_menu/lib/wsrpc.js";
 import {RPCServer} from "../../../../extensions/ayon_menu/lib/rpc_server.js"
 import {AYON_ORIGIN_ADRESS} from "../../../../extensions/ayon_menu/lib/consts.js"
@@ -228,6 +232,34 @@ function register_ayon_sidebar_tab() {
     }
   })
 }
+
+
+/**
+ * Set the values of the widgets of a node.
+ * @param {string} node_id 
+ * @param {object} params object with the name of the widget as the key
+ * and the value as the value of the widget
+ */
+function set_node_values(node_id, params) {
+  const node = app.graph.getNodeById(node_id);
+  if (!node) {
+    console.log("node not found", { node_id });
+    return;
+  }
+
+  for (const [key, value] of Object.entries(params)) {
+    const widget = node.widgets.find(widget => widget.name == key);
+
+    if (!widget) {
+      console.log("widget not found", { key });
+      continue;
+    }
+
+    widget.value = value;
+    console.log("setting widget value", { key, value });
+  }
+}
+
 
 app.registerExtension({
     name: "comfy_ayon_menu",
@@ -550,6 +582,13 @@ app.registerExtension({
             return ext.PROC_QUEUE.pop()
           return null
         }
+
+        api.addEventListener("ayon", (message) => {
+          const data = message.detail;
+          if (data.function == "set_node_values") {
+            set_node_values(data.node_id, data.params);
+          }
+        });
 
         this.IFRAMERPC.register("pop_process", (data) => {
           let result = retrieve_latest_procqueue()

@@ -111,6 +111,11 @@ class Instance:
     ############################################################################
     # Helper functions
 
+    def connect(self) -> None:
+        if self.status == self.Status.ONLINE:
+            return
+        self._ws.open(self.ws_url)
+
     def fetch_status(self) -> None:
         self._ws.sendTextMessage(json.dumps({
             "type": "ayon",
@@ -119,3 +124,29 @@ class Instance:
 
     def _update_status(self, data: dict) -> None:
         self.sessions = [Session(id=session) for session in data["sessions"]]
+
+    def set_node_values(
+        self,
+        session_id: str,
+        node_id: str | int,
+        params: dict,
+    ) -> None:
+        """Set the values of a node.
+
+        Args:
+            session_id: The id of the session
+            node_id: The id of the node
+            params: A dictionary of the parameters to set
+        """
+        self._ws.sendTextMessage(json.dumps({
+            "type": "ayon",
+            "function": "set_node_values",
+            "target": "frontend",
+
+            # where
+            "session_id": session_id,
+            "node_id": str(node_id),   # comfyui expects a string
+
+            # what
+            "params": params,
+        }))
