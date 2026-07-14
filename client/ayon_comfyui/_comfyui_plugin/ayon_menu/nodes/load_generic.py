@@ -2,12 +2,14 @@ from __future__ import annotations
 
 # IMPORT STANDARD LIBRARIES
 import typing
+from uuid import uuid4
 
 # IMPORT THIRD PARTY LIBRARIES
 from comfy_api.latest import io
 
 # IMPORT LOCAL LIBRARIES
 from ._base_node import AyonBaseNode
+from .. import api
 
 
 class AyonLoadGenericNode(AyonBaseNode):
@@ -18,15 +20,15 @@ class AyonLoadGenericNode(AyonBaseNode):
     category = "AYON"
 
     @classmethod
-    def define_inputs(cls):
+    def define_inputs(cls) -> list[io.Input]:
         return [
             io.String.Input("project", "Project"),
-            io.Combo.Input("folder_path", display_name="Folder Path", options=[]),
-            io.Combo.Input("product", display_name="Product", options=[]),
-            io.Combo.Input("version", display_name="Version", options=[]),
-            io.Combo.Input("representation", display_name="Representation", options=[]),
+            io.String.Input("folder_path", display_name="Folder Path"),
+            io.String.Input("product", display_name="Product"),
+            io.String.Input("version", display_name="Version"),
+            io.String.Input("representation", display_name="Representation"),
             io.String.Input("representation_id", "Representation ID"),
-            io.String.Input("filepath", "Filepath"),
+            # io.String.Input("filepath", "Filepath"),
         ]
 
     @classmethod
@@ -48,7 +50,35 @@ class AyonLoadGenericNode(AyonBaseNode):
     @classmethod
     async def execute(  # ty:ignore[invalid-method-override]  # pyright: ignore[reportIncompatibleMethodOverride]
         cls,
-        filepath: str,
+        project: str,
+        folder_path: str,
+        product: str,
+        version: str,
+        representation: str,
         **kwargs: typing.Any,
     ) -> io.NodeOutput:
+
+        print("------- execute -------")
+        result = await api.send_message_to_client({
+            "type": "ayon",
+            "function": "get_representation",
+            "message_id": str(uuid4()),
+            "params": {
+                "project": project,
+                "folder_path": folder_path,
+                "product": product,
+                "version": version,
+                "representation": representation,
+            },
+        })
+        if not isinstance(result, dict):
+            return io.NodeOutput("")
+
+        print("--------------")
+        # print("RESPONSE", response)
+        # result = response.get("result", {})
+        print("RESULT", result)
+        filepath = result.get("filepath", "")
+        print("--------------")
+        print("FILEPATH", filepath)
         return io.NodeOutput(filepath)

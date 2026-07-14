@@ -51,6 +51,9 @@ class SessionManager(QtWidgets.QWidget):
         self._input_version = QtWidgets.QSpinBox()
         self._input_version.valueChanged.connect(self._on_version_changed)
 
+        self._input_filepath = QtWidgets.QLineEdit()
+        self._input_filepath.textChanged.connect(self._on_filepath_changed)
+
         inputs_layout = QtWidgets.QFormLayout()
         inputs_layout.addRow("Instance", self._input_instance)
         inputs_layout.addRow("Session", self._input_session)
@@ -60,6 +63,10 @@ class SessionManager(QtWidgets.QWidget):
         inputs_layout.addRow("Project", self._input_project)
         inputs_layout.addRow("Folder", self._input_folder)
         inputs_layout.addRow("Version", self._input_version)
+
+        inputs_layout.addRow(QtWidgets.QLabel("Out:"))
+        inputs_layout.addRow("Filepath", self._input_filepath)
+
         inputs_widget = QtWidgets.QWidget()
         inputs_widget.setLayout(inputs_layout)
 
@@ -71,10 +78,10 @@ class SessionManager(QtWidgets.QWidget):
         main_layout.addWidget(spliter)
         self.setLayout(main_layout)
 
-        # self._refresh_timer = QtCore.QTimer()
-        # self._refresh_timer.timeout.connect(self._refresh_instances)
-        # self._refresh_timer.setInterval(1000)
-        # self._refresh_timer.start()
+        self._refresh_timer = QtCore.QTimer()
+        self._refresh_timer.timeout.connect(self._refresh_instances)
+        self._refresh_timer.setInterval(1000)
+        self._refresh_timer.start()
 
         self._load_instances()
         self._refresh_instances()
@@ -130,3 +137,10 @@ class SessionManager(QtWidgets.QWidget):
 
     def _on_version_changed(self, value):
         self.set_node_value("version", value)
+
+    def _on_filepath_changed(self, value):
+        instance = self._instance_list.get_selected_instance()
+        if not instance:
+            return
+
+        instance.filepath = value

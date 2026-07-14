@@ -47,6 +47,9 @@ class Instance:
     status: Status = Status.UNKNOWN
     last_updated: datetime.datetime = datetime.datetime.min
 
+    # TMP
+    filepath: str = ""
+
     _ws: QtWebSockets.QWebSocket = dataclasses.field(init=False)
     """WebSocket connection to the ComfyUI instance"""
 
@@ -97,16 +100,30 @@ class Instance:
             print("JSON DECODE ERROR", message)
             return
 
-        if data["type"] != "ayon":
+        if data.get("type") != "ayon":
             return
 
-        result = data.get("result", None)
+        params = data.get("params", {})
+        message_id = data.get("message_id")
+        function = data.get("function")
 
-        if data["function"] == "get_instance_status":
-            self._update_status(result)
+        result = None
+        if function == "get_instance_status":
+            result = data.get("result", None)
+            result = self._update_status(result)
+        if function == "get_representation":
+            result = self._get_representation(**params)
 
-        self.status = self.Status.ONLINE
-        self._emit_updated()
+        if result:
+            print("SENDING REPLY", message_id, result)
+            self._ws.sendTextMessage(json.dumps({
+                "type": "ayon-reply",
+                "message_id": message_id,
+                "result": result,
+            }))
+
+        # self.status = self.Status.ONLINE
+        # self._emit_updated()
 
     ############################################################################
     # Helper functions
@@ -124,6 +141,20 @@ class Instance:
 
     def _update_status(self, data: dict) -> None:
         self.sessions = [Session(id=session) for session in data["sessions"]]
+        self._emit_updated()
+
+    def _get_representation(self, **params: dict) -> dict:
+        print("GET REPRESENTATION", params)
+
+        project = params.get("project", "")
+        folder_path = params.get("folder_path", "")
+        version = params.get("version", "")
+
+        path = f"{folder_path}/{version}/{self.filepath}"
+
+        return {
+            "filepath": path,
+        }
 
     def set_node_values(
         self,
