@@ -590,6 +590,20 @@ app.registerExtension({
           }
         });
 
+        window.addEventListener("focus", () => {
+          console.log("focus event")
+          console.log({api})
+
+          const body = new FormData();
+          body.append("session_id", api.clientId);
+          api.fetchApi("/ayon/focus_changed", { method: "POST", body, });
+        })
+
+        window.addEventListener("blur", () => {
+          console.log("blur event")
+          api.fetchApi("/ayon/focus_changed", { method: "POST", body: {}, });
+        })
+
         this.IFRAMERPC.register("pop_process", (data) => {
           let result = retrieve_latest_procqueue()
           if (result !== null)

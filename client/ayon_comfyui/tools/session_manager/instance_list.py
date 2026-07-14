@@ -35,7 +35,17 @@ STATUS_ICONS = {
         name="question_mark",
         color="#ccc",
     ),
+
+    Session.Status.FOCUSED: MaterialSymbolsIcon(
+        name="filter_center_focus",
+        color="#00d0ff",
+    ),
+    Session.Status.IDLE: MaterialSymbolsIcon(
+        name="pause_circle",  # "mode_standby"  "pause"
+        color="#ffd500",
+    ),
 }
+
 
 # region ViewModel
 
@@ -128,6 +138,13 @@ class SessionTreeNode(Treeitem):
         if role == QtCore.Qt.ItemDataRole.DisplayRole:
             if column == 0:
                 return self._short_id
+            if column == 2:
+                return self.session.status.value
+
+        if role == QtCore.Qt.ItemDataRole.DecorationRole:
+            if column == 2:
+                if icon_def := STATUS_ICONS.get(self.session.status, None):
+                    return get_qt_icon(icon_def)
 
         if role == QtCore.Qt.ItemDataRole.FontRole:
             if column == 0:

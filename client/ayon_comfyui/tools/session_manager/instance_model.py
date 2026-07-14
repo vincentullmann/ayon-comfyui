@@ -17,6 +17,7 @@ class Session:
     class Status(Enum):
         IDLE = "idle"
         RENDERING = "rendering"
+        FOCUSED = "focused"
         UNKNOWN = "unknown"
 
     id: str
@@ -113,6 +114,8 @@ class Instance:
             result = self._update_status(result)
         if function == "get_representation":
             result = self._get_representation(**params)
+        if function == "focus_changed":
+            result = self._focus_changed(**params)
 
         if result:
             print("SENDING REPLY", message_id, result)
@@ -155,6 +158,16 @@ class Instance:
         return {
             "filepath": path,
         }
+
+    def _focus_changed(self, **params: dict) -> None:
+        session_id = params.get("session_id", "")
+        for session in self.sessions:
+            if session.id == session_id:
+                session.status = Session.Status.FOCUSED
+            else:
+                session.status = Session.Status.IDLE
+
+        self._emit_updated()
 
     def set_node_values(
         self,
