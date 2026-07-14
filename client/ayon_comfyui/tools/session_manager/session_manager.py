@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-# IMPORT STANDARD LIBRARIES
-import json
-import sys
-
 # IMPORT THIRD PARTY LIBRARIES
-from qtpy import QtCore, QtNetwork, QtWebSockets, QtWidgets
+from qtpy import QtCore, QtWidgets
 
 # IMPORT LOCAL LIBRARIES
 from ayon_comfyui.tools.session_manager.instance_list import InstanceList
@@ -13,9 +9,10 @@ from ayon_comfyui.tools.session_manager.controller import InstanceController
 
 
 class SessionManager(QtWidgets.QWidget):
-
     def __init__(self, parent: QtWidgets.QWidget | None = None) -> None:
         super().__init__(parent)
+
+        self.resize(460, 330)
 
         self._instance_list = InstanceList()
         self._controller = InstanceController()
@@ -24,7 +21,7 @@ class SessionManager(QtWidgets.QWidget):
         self._button_open.clicked.connect(self._on_button_open_clicked)
 
         self._button_refresh = QtWidgets.QPushButton("Refresh")
-        self._button_refresh.clicked.connect(self._on_button_refresh_clicked)
+        self._button_refresh.clicked.connect(self._refresh_instances)
 
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.addWidget(self._instance_list)
@@ -37,34 +34,17 @@ class SessionManager(QtWidgets.QWidget):
         self._refresh_timer.setInterval(1000)
         self._refresh_timer.start()
 
-        # initial refresh
-        self._refresh_instances()
+        self._load_instances()
+
+    def onClose(self) -> None:
+        pass
 
     def _on_button_open_clicked(self) -> None:
         print("open seelcted instance")
 
-    def _on_button_refresh_clicked(self) -> None:
-        self._refresh_instances()
-
-    def _refresh_instances(self) -> None:
-        print("refresh instance list")
+    def _load_instances(self) -> None:
         instances = self._controller.get_instances()
         self._instance_list.set_instances(instances)
 
-
-################################################################################
-# TEST
-
-def main() -> int:
-    app = QtWidgets.QApplication(sys.argv)
-
-    # widget = WsClientWidget(URL)
-    widget = SessionManager()
-    widget.resize(460, 330)
-    widget.show()
-
-    return app.exec()
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    def _refresh_instances(self) -> None:
+        self._controller.update_instances()
