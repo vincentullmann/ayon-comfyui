@@ -213,15 +213,13 @@ def get_instance_status(data: dict) -> dict:
 HANDLERS["get_instance_status"] = get_instance_status
 
 
-def set_node_value(data: dict) -> dict:
-    """Get the status of an instance."""
-
-    session_id = data.get("session_id")
-    node_id = data.get("node_id")
-    project = data.get("project")
-    folder = data.get("folder")
-    version = data.get("version")
-
-
-HANDLERS["set_node_value"] = set_node_value
-
+@SERVER.routes.patch("/ayon/session_update")
+async def session_update(request: web.Request) -> web.Response:
+    """Handle a session update event."""
+    data = await request.post()
+    await send_message_to_client(payload={
+        "type": "ayon",
+        "function": "session_update",
+        "params": dict(data),
+    })
+    return web.json_response({})

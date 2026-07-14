@@ -257,12 +257,14 @@ function set_node_values(node_id, params) {
 
     widget.value = value;
     console.log("setting widget value", { key, value });
+    app.graph.setDirtyCanvas(true, true);
   }
 }
 
 
 app.registerExtension({
     name: "comfy_ayon_menu",
+
     async afterConfigureGraph(graphData) {
 
         async function execute_single_node(node) {
@@ -316,7 +318,13 @@ app.registerExtension({
           generate_thumbnails_loadimage_nodes()
           generate_thumbnails_loadvideo_nodes()
           generate_thumbnails_load3dmodel_nodes() // Don't know if this will actually make UI thumbnails, but it will at least load stuff in memory
-      })
+        })
+
+        // inform the backend about this session
+        const body = new FormData();
+        body.append("session_id", api.clientId);
+        body.append("status", document.hasFocus() ? "focused" : "idle");
+        api.fetchApi("/ayon/session_update", { method: "PATCH", body, });
     },
     async setup() {
         console.log("AYON")
@@ -592,16 +600,25 @@ app.registerExtension({
 
         window.addEventListener("focus", () => {
           console.log("focus event")
-          console.log({api})
-
           const body = new FormData();
           body.append("session_id", api.clientId);
-          api.fetchApi("/ayon/focus_changed", { method: "POST", body, });
+          body.append("status", "focused");
+          api.fetchApi("/ayon/session_update", { method: "PATCH", body, });
+
         })
 
         window.addEventListener("blur", () => {
-          console.log("blur event")
-          api.fetchApi("/ayon/focus_changed", { method: "POST", body: {}, });
+          const body = new FormData();
+          body.append("session_id", api.clientId);
+          body.append("status", "idle");
+          api.fetchApi("/ayon/session_update", { method: "PATCH", body, });
+        })
+        
+        window.addEventListener("beforeunload", function (e) {
+          const body = new FormData();
+          body.append("session_id", api.clientId);
+          body.append("status", "closed");
+          api.fetchApi("/ayon/session_update", { method: "PATCH", body, });
         })
 
         this.IFRAMERPC.register("pop_process", (data) => {

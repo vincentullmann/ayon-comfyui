@@ -72,6 +72,16 @@ class Instance:
         url = self.url.removeprefix("http")  # we leave the "s://" part from "https://"
         return f"ws{url}/ayon/ws"
 
+    @property
+    def session_ids(self) -> list[str]:
+        return [session.id for session in self.sessions]
+
+    def get_session(self, session_id: str) -> Session | None:
+        for session in self.sessions:
+            if session.id == session_id:
+                return session
+        return None
+
     def _emit_updated(self) -> None:
         """Triger all on_update callbacks"""
         for callback in list(self.on_update):
@@ -114,8 +124,8 @@ class Instance:
             result = self._update_status(result)
         if function == "get_representation":
             result = self._get_representation(**params)
-        if function == "focus_changed":
-            result = self._focus_changed(**params)
+        if function == "session_update":
+            self._session_update(**params)
 
         if result:
             print("SENDING REPLY", message_id, result)
@@ -159,13 +169,22 @@ class Instance:
             "filepath": path,
         }
 
-    def _focus_changed(self, **params: dict) -> None:
-        session_id = params.get("session_id", "")
-        for session in self.sessions:
-            if session.id == session_id:
-                session.status = Session.Status.FOCUSED
-            else:
-                session.status = Session.Status.IDLE
+    def _session_update(self, session_id: str, status: str = "", **kwargs) -> None:
+        session = self.get_session(session_id)
+
+        # new session
+        if session is None:
+            session = Session(id=session_id)
+            self.sessions.append(session)
+
+        if status == "closed":
+            # delete session
+            self.sessions.remove(session)
+        else:
+            try:
+                session.status = Session.Status[status.upper()]
+            except KeyError:
+                print("invalid status", status)
 
         self._emit_updated()
 
