@@ -614,7 +614,7 @@ app.registerExtension({
           api.fetchApi("/ayon/session_update", { method: "PATCH", body, });
         })
         
-        window.addEventListener("beforeunload", function (e) {
+        window.addEventListener("beforeunload", function () {
           const body = new FormData();
           body.append("session_id", api.clientId);
           body.append("status", "closed");

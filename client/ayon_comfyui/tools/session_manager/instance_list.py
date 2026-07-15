@@ -44,6 +44,10 @@ STATUS_ICONS = {
         name="pause_circle",  # "mode_standby"  "pause"
         color="#ffd500",
     ),
+    Session.Status.CLOSED: MaterialSymbolsIcon(
+        name="stop_circle",
+        color="#ff0000",
+    ),
 }
 
 
@@ -128,6 +132,7 @@ class SessionTreeNode(Treeitem):
         # shorten the session id a bit
         start, end = session.id[:8], session.id[-8:]
         self._short_id = f"{start}...{end}"
+        self._color_closed = QtGui.QColor.fromHslF(0, 0, 0.25)
 
     def data(
         self,
@@ -149,6 +154,11 @@ class SessionTreeNode(Treeitem):
         if role == QtCore.Qt.ItemDataRole.FontRole:
             if column == 0:
                 return self.font
+
+        if role == QtCore.Qt.ItemDataRole.ForegroundRole:
+            if column == 2:
+                if self.session.status == Session.Status.CLOSED:
+                    return self._color_closed
 
 
 class InstanceViewModel(TreeModel):

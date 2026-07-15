@@ -5,7 +5,7 @@ import dataclasses
 import datetime
 from enum import Enum
 import json
-from typing import Callable
+from typing import Callable, Any
 
 # IMPORT THIRD PARTY LIBRARIES
 from qtpy import QtWebSockets
@@ -18,6 +18,7 @@ class Session:
         IDLE = "idle"
         RENDERING = "rendering"
         FOCUSED = "focused"
+        CLOSED = "closed"
         UNKNOWN = "unknown"
 
     id: str
@@ -55,9 +56,11 @@ class Instance:
     """WebSocket connection to the ComfyUI instance"""
 
     on_update: list[Callable[[Instance], None]] = dataclasses.field(init=False)
+    on_event: list[Callable[[str, Any], None]] = dataclasses.field(init=False)
 
     def __post_init__(self) -> None:
         self.on_update = []
+        self.on_event = []
         self.on_update.append(self._on_updated)
 
         # initialize the WebSocket connection
@@ -87,6 +90,10 @@ class Instance:
         for callback in list(self.on_update):
             callback(self)
 
+    def emit_event(self, event: str, **kwargs) -> None:
+        for callback in list(self.on_event):
+            callback(event, **kwargs)
+
     ############################################################################
     # WebSocket callbacks
 
@@ -111,7 +118,7 @@ class Instance:
             print("JSON DECODE ERROR", message)
             return
 
-        if data.get("type") != "ayon":
+        if data.get("type") not in ["ayon", "ayon-reply"]:
             return
 
         params = data.get("params", {})
@@ -172,19 +179,21 @@ class Instance:
     def _session_update(self, session_id: str, status: str = "", **kwargs) -> None:
         session = self.get_session(session_id)
 
+        # ignore closed sessions
+        # sometimes we might get update events for closed sessions
+        # we need to ignore them
+        if session and session.status == Session.Status.CLOSED:
+            return
+
         # new session
         if session is None:
             session = Session(id=session_id)
             self.sessions.append(session)
 
-        if status == "closed":
-            # delete session
-            self.sessions.remove(session)
-        else:
-            try:
-                session.status = Session.Status[status.upper()]
-            except KeyError:
-                print("invalid status", status)
+        try:
+            session.status = Session.Status[status.upper()]
+        except KeyError:
+            print("invalid status", status)
 
         self._emit_updated()
 
