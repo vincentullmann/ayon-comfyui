@@ -172,10 +172,12 @@ async def send_message_to_client(
     if not client:
         client = next((ws for ws in _CLIENTS if not ws.closed), None)
     if client is None:
-        raise RuntimeError("No connected AYON websocket clients")
+        # raise RuntimeError("No connected AYON websocket clients")
+        print("[send] no ayon clients connected")
+        return
 
-    print("SENDING MESSAGE TO CLIENT 1", payload)
     # send message
+    print("[send]", payload)
     await client.send_json(payload)
 
     # wait for a response
