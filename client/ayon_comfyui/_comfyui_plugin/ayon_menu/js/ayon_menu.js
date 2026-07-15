@@ -262,6 +262,30 @@ function set_node_values(node_id, params) {
 }
 
 
+function get_node_values(node_id) {
+  console.log("get_node_values", { node_id });
+
+  const node = app.graph.getNodeById(node_id);
+  if (!node) {
+    console.log("node not found", { node_id });
+    return;
+  }
+
+  const values = {}
+  for (const widget of node.widgets) {
+    values[widget.name] = widget.value;
+  }
+  console.log("values", values);
+
+  const body = new FormData();
+  // body.append("session_id", session_id);
+  body.append("node_id", node_id);
+  body.append("values", JSON.stringify(values));
+  api.fetchApi("/ayon/node_values", { method: "POST", body, });
+}
+
+
+
 app.registerExtension({
     name: "comfy_ayon_menu",
 
@@ -595,6 +619,9 @@ app.registerExtension({
           const data = message.detail;
           if (data.function == "set_node_values") {
             set_node_values(data.node_id, data.params);
+          }
+          if (data.function == "get_node_values") {
+            get_node_values(data.node_id);
           }
         });
 

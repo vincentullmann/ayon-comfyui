@@ -133,6 +133,8 @@ class Instance:
             result = self._get_representation(**params)
         if function == "session_update":
             self._session_update(**params)
+        if function == "node_values":
+            self.emit_event("node_values_received", **params)
 
         if result:
             print("SENDING REPLY", message_id, result)
@@ -157,6 +159,19 @@ class Instance:
         self._ws.sendTextMessage(json.dumps({
             "type": "ayon",
             "function": "get_instance_status",
+        }))
+
+    def get_node_values(
+        self,
+        session_id: str,
+        node_id: str,
+    ) -> None:
+        self._ws.sendTextMessage(json.dumps({
+            "type": "ayon",
+            "target": "frontend",
+            "function": "get_node_values",
+            "session_id": session_id,
+            "node_id": node_id,
         }))
 
     def _update_status(self, data: dict) -> None:

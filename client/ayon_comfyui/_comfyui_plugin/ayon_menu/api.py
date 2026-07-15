@@ -225,3 +225,16 @@ async def session_update(request: web.Request) -> web.Response:
         "params": dict(data),
     })
     return web.json_response({})
+
+
+@SERVER.routes.post("/ayon/node_values")
+async def node_values(request: web.Request) -> web.Response:
+    """Handle a session update event."""
+    # TODO: message_id
+    data = await request.post()
+    await send_message_to_client(payload={
+        "type": "ayon-reply",
+        "function": "node_values",
+        "params": dict(data),
+    })
+    return web.json_response({})
