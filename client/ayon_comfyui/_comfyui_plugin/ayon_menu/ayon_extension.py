@@ -3,8 +3,7 @@
 Using the V3 API to remain compatible for a loooooong time.
 """
 
-from threading import Thread
-
+import asyncio
 from comfy_api.latest import ComfyExtension, io
 from typing_extensions import override
 
@@ -20,11 +19,18 @@ from .nodes.publish_nodes import (
     AyonSaveNode,
     AyonSaveVideoNode,
 )
-from .ws_server import run_server
 
 
 class AyonComfyUIExtension(ComfyExtension):
     """Main Ayon Extension"""
+
+    """
+    def __init__(self):
+        print("AyonComfyUIExtension __init__")
+
+        self.ws_app = get_app()
+        self.app_runner = web.AppRunner(self.ws_app)
+    """
 
     @override
     async def get_node_list(self) -> list[type[io.ComfyNode]]:
@@ -42,5 +48,5 @@ class AyonComfyUIExtension(ComfyExtension):
 
 async def comfy_entrypoint() -> AyonComfyUIExtension:
     print("Running internal websocket server for Ayon...")
-    Thread(target=run_server).start()
+    # Thread(target=run_server).start()
     return AyonComfyUIExtension()
